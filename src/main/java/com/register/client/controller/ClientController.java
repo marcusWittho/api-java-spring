@@ -2,6 +2,7 @@ package com.register.client.controller;
 
 import com.register.client.model.Client;
 import com.register.client.repository.ClientRepository;
+import com.register.client.service.ClientService;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -22,11 +23,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping(path = "/register")
 public class ClientController {
   
-  private ClientRepository repository;
+  final ClientService service;
   
-  public ClientController(ClientRepository repository) {
+  public ClientController(ClientService service) {
     super();
-    this.repository = repository;
+    this.service = service;
   }
 
   /**
@@ -35,7 +36,7 @@ public class ClientController {
   @PostMapping
   public ResponseEntity<Client> addClient(@RequestBody Client client) {
     
-    return ResponseEntity.status(200).body(repository.save(client));
+    return ResponseEntity.status(200).body(service.save(client));
   }
   
   /**
@@ -45,7 +46,7 @@ public class ClientController {
   public ResponseEntity<Iterable<Client>> clients() {
 
     Iterable<Client> clients = new ArrayList<>();
-    clients = repository.findAll();
+    clients = service.findAll();
     
     return ResponseEntity.status(201).body(clients);
   }
@@ -59,7 +60,7 @@ public class ClientController {
     Optional<Client> client;
     
     try {
-      client = repository.findById(id);
+      client = service.findById(id);
       return ResponseEntity.status(201).body(client);
     } catch (NoSuchElementException err) {
       return ResponseEntity.status(404).build();
@@ -72,7 +73,7 @@ public class ClientController {
   @DeleteMapping("/{id}")
   public ResponseEntity<Optional<Client>> removeClient(@PathVariable Long id) {
     try {
-      repository.deleteById(id);
+      service.deleteById(id);
       return ResponseEntity.status(201).build();
     } catch (NoSuchElementException err) {
       return ResponseEntity.status(404).build();
@@ -83,15 +84,9 @@ public class ClientController {
    * Método responsável por atualizar determinado cliente.
    */
   @PutMapping("/{id}")
-  public ResponseEntity<Client> updateClient(@PathVariable Long id, @RequestBody Client client) {
+  public ResponseEntity<Optional<Object>> updateClient(
+      @PathVariable Long id, @RequestBody Client client) {
     
-    return repository.findById(id)
-        .map(foundClient -> {
-          foundClient.setName(client.getName());
-          foundClient.setAge(client.getAge());
-          foundClient.setEmail(client.getEmail());
-          Client clientUpdated = repository.save(foundClient);
-          return ResponseEntity.ok().body(clientUpdated);
-        }).orElse(ResponseEntity.notFound().build());
+    return ResponseEntity.ok().body(service.updateClient(id, client));
   }
 }
